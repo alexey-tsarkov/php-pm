@@ -2,6 +2,7 @@
 
 namespace PHPPM\Commands;
 
+use PHPPM\PPMConfiguration;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,26 +16,18 @@ trait ConfigTrait
 
     protected function configurePPMOptions(Command $command)
     {
-        $command
-            ->addOption('bridge', null, InputOption::VALUE_REQUIRED, 'Bridge for converting React Psr7 requests to target framework.', 'HttpKernel')
-            ->addOption('host', null, InputOption::VALUE_REQUIRED, 'Load-Balancer host. Default is 127.0.0.1', '127.0.0.1')
-            ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Load-Balancer port. Default is 8080', 8080)
-            ->addOption('workers', null, InputOption::VALUE_REQUIRED, 'Worker count. Default is 8. Should be minimum equal to the number of CPU cores.', 8)
-            ->addOption('app-env', null, InputOption::VALUE_REQUIRED, 'The environment that your application will use to bootstrap (if any)', 'dev')
-            ->addOption('debug', null, InputOption::VALUE_REQUIRED, 'Enable/Disable debugging so that your application is more verbose, enables also hot-code reloading. 1|0', 0)
-            ->addOption('logging', null, InputOption::VALUE_REQUIRED, 'Enable/Disable http logging to stdout. 1|0', 1)
-            ->addOption('static-directory', null, InputOption::VALUE_REQUIRED, 'Static files root directory, if not provided static files will not be served', '')
-            ->addOption('max-requests', null, InputOption::VALUE_REQUIRED, 'Max requests per worker until it will be restarted', 1000)
-            ->addOption('max-execution-time', null, InputOption::VALUE_REQUIRED, 'Maximum amount of time a request is allowed to execute before shutting down', 30)
-            ->addOption('memory-limit', null, InputOption::VALUE_REQUIRED, 'Maximum amount of memory a worker is allowed to consume (in MB) before shutting down', -1)
-            ->addOption('ttl', null, InputOption::VALUE_REQUIRED, 'Time to live for a worker until it will be restarted', null)
-            ->addOption('populate-server-var', null, InputOption::VALUE_REQUIRED, 'If a worker application uses $_SERVER var it needs to be populated by request data 1|0', 1)
-            ->addOption('bootstrap', null, InputOption::VALUE_REQUIRED, 'Class responsible for bootstrapping the application', 'PHPPM\Bootstraps\Symfony')
-            ->addOption('cgi-path', null, InputOption::VALUE_REQUIRED, 'Full path to the php-cgi executable', false)
-            ->addOption('socket-path', null, InputOption::VALUE_REQUIRED, 'Path to a folder where socket files will be placed. Relative to working-directory or cwd()', '.ppm/run/')
-            ->addOption('pidfile', null, InputOption::VALUE_REQUIRED, 'Path to a file where the pid of the master process is going to be stored', '.ppm/ppm.pid')
-            ->addOption('reload-timeout', null, InputOption::VALUE_REQUIRED, 'The number of seconds to wait before force closing a worker during a reload, or -1 to disable. Default: 30', 30)
-            ->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'Path to config file', '');
+        $tree = (new PPMConfiguration())->getConfigTreeBuilder()->buildTree();
+        foreach ($tree->getChildren() as $node) {
+            $command->addOption(
+                $node->getName(),
+                null,
+                InputOption::VALUE_REQUIRED,
+                $node->getInfo(),
+                $node->hasDefaultValue() ? $node->getDefaultValue() : null
+            );
+        }
+
+        $command->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'Path to config file', '');
     }
 
     protected function renderConfig(OutputInterface $output, array $config)
