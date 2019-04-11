@@ -5,6 +5,7 @@
     "require": {
         "php": "^7.1",
         "symfony/console": "^3.4|^4",
+        "symfony/config": "^3.4|^4",
         "symfony/debug": "^3.4|^4",
         "symfony/process": "^3.4|^4",
         "react/event-loop": "^1.0",
