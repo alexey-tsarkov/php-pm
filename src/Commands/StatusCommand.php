@@ -22,11 +22,10 @@ class StatusCommand extends Command
         $this
             ->setName('status')
             ->setDescription('Status of all processes')
-            ->addOption('socket-path', null, InputOption::VALUE_REQUIRED, 'Path to a folder where socket files will be placed. Relative to working-directory or cwd()', '.ppm/run/')
             ->addArgument('working-directory', null, 'Working directory', './')
         ;
 
-        $this->configurePPMOptions($this);
+        $this->configurePPMOptions($this, 'socket-path');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -38,8 +37,6 @@ class StatusCommand extends Command
         $handler->getStatus(function ($status) use ($output) {
             $output->writeln($this->parseStatus($status));
         });
-
-        return null;
     }
 
     /**

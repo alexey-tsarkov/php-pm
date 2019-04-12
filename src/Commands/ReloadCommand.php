@@ -23,11 +23,10 @@ class ReloadCommand extends Command
         $this
             ->setName('reload')
             ->setDescription('Reloads the server')
-            ->addOption('socket-path', null, InputOption::VALUE_REQUIRED, 'Path to a folder where socket files will be placed. Relative to working-directory or cwd()', '.ppm/run/')
             ->addArgument('working-directory', InputArgument::OPTIONAL, 'Working directory', './')
         ;
 
-        $this->configurePPMOptions($this);
+        $this->configurePPMOptions($this, 'socket-path');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -39,7 +38,5 @@ class ReloadCommand extends Command
         $handler->reloadProcessManager(function ($status) use ($output) {
             $output->writeln("Requested a worker reload.");
         });
-
-        return null;
     }
 }
