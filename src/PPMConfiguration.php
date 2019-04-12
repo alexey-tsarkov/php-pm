@@ -2,6 +2,7 @@
 
 namespace PHPPM;
 
+use PHPPM\Utils;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Closure;
@@ -181,7 +182,7 @@ class PPMConfiguration implements ConfigurationInterface
             'bridge' => 'HttpKernel',
             'host' => '127.0.0.1',
             'port' => 8080,
-            'workers' => max((int)`nproc`, 8),
+            'workers' => max(Utils::getNumberOfProcessors(), 8),
             'app-env' => 'dev',
             'debug' => false,
             'logging' => true,

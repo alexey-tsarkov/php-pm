@@ -105,4 +105,14 @@ class Utils
 
         return $path;
     }
+
+    public static function getNumberOfProcessors(): int
+    {
+        if ('\\' === DIRECTORY_SEPARATOR) {
+            $nproc = (int)getenv('NUMBER_OF_PROCESSORS');
+        } else {
+            $nproc = (int)@`nproc`;
+        }
+        return max($nproc, 1);
+    }
 }
