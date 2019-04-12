@@ -181,7 +181,7 @@ class PPMConfiguration implements ConfigurationInterface
             'bridge' => 'HttpKernel',
             'host' => '127.0.0.1',
             'port' => 8080,
-            'workers' => (int)`nproc`,
+            'workers' => max((int)`nproc`, 8),
             'app-env' => 'dev',
             'debug' => false,
             'logging' => true,
