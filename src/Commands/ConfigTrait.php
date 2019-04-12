@@ -3,6 +3,7 @@
 namespace PHPPM\Commands;
 
 use PHPPM\PPMConfiguration;
+use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
@@ -13,11 +14,13 @@ use Symfony\Component\Process\PhpExecutableFinder;
 trait ConfigTrait
 {
     protected $file = './ppm.json';
+    protected $configTree;
 
     protected function configurePPMOptions(Command $command)
     {
-        $tree = (new PPMConfiguration())->getConfigTreeBuilder()->buildTree();
-        foreach ($tree->getChildren() as $node) {
+        $this->configTree = (new PPMConfiguration())->getConfigTreeBuilder()->buildTree();
+
+        foreach ($this->configTree->getChildren() as $node) {
             $command->addOption(
                 $node->getName(),
                 null,
@@ -33,11 +36,27 @@ trait ConfigTrait
     protected function renderConfig(OutputInterface $output, array $config)
     {
         $table = new Table($output);
+        $table->setHeaders(['Option', 'Value', 'Default']);
 
-        $rows = array_map(function ($a, $b) {
-            return [$a, $b];
-        }, array_keys($config), $config);
-        $table->addRows($rows);
+        foreach ($this->configTree->getChildren() as $node) {
+            $name = $node->getName();
+            $value = isset($config[$name]) ? $config[$name] : null;
+            $default = $node->hasDefaultValue() ? $node->getDefaultValue() : null;
+
+            $row = [
+                $name,
+                $value === null ? '' : var_export($value, true),
+                $default === null ? '' : var_export($default, true),
+            ];
+
+            if ($value !== $default) {
+                $row = array_map(function ($v) {
+                    return "<comment>{$v}</comment>";
+                }, $row);
+            }
+
+            $table->addRow($row);
+        }
 
         $table->render();
     }
@@ -81,27 +100,14 @@ trait ConfigTrait
             $config = json_decode($content, true);
         }
 
-        $config['bridge'] = $this->optionOrConfigValue($input, 'bridge', $config);
-        $config['host'] = $this->optionOrConfigValue($input, 'host', $config);
-        $config['port'] = (int)$this->optionOrConfigValue($input, 'port', $config);
-        $config['workers'] = (int)$this->optionOrConfigValue($input, 'workers', $config);
-        $config['app-env'] = $this->optionOrConfigValue($input, 'app-env', $config);
-        $config['debug'] = $this->optionOrConfigValue($input, 'debug', $config);
-        $config['logging'] = $this->optionOrConfigValue($input, 'logging', $config);
-        $config['static-directory'] = $this->optionOrConfigValue($input, 'static-directory', $config);
-        $config['bootstrap'] = $this->optionOrConfigValue($input, 'bootstrap', $config);
-        $config['max-requests'] = (int)$this->optionOrConfigValue($input, 'max-requests', $config);
-        $config['max-execution-time'] = (int)$this->optionOrConfigValue($input, 'max-execution-time', $config);
-        $config['memory-limit'] = (int)$this->optionOrConfigValue($input, 'memory-limit', $config);
-        $config['ttl'] = (int)$this->optionOrConfigValue($input, 'ttl', $config);
-        $config['populate-server-var'] = (boolean)$this->optionOrConfigValue($input, 'populate-server-var', $config);
-        $config['socket-path'] = $this->optionOrConfigValue($input, 'socket-path', $config);
-        $config['pidfile'] = $this->optionOrConfigValue($input, 'pidfile', $config);
-        $config['reload-timeout'] = $this->optionOrConfigValue($input, 'reload-timeout', $config);
+        $options = $this->getSpecifiedOptions($input);
 
-        $config['cgi-path'] = $this->optionOrConfigValue($input, 'cgi-path', $config);
+        $config = (new Processor())->process(
+            $this->configTree,
+            [$config, $options]
+        );
 
-        if (false === $config['cgi-path']) {
+        if ('' === $config['cgi-path']) {
             //not set in config nor in command options -> autodetect path
             $executableFinder = new PhpExecutableFinder();
             $binary = $executableFinder->find();
@@ -119,7 +125,7 @@ trait ConfigTrait
                 }
             }
 
-            if (false === $config['cgi-path']) {
+            if ('' === $config['cgi-path']) {
                 $output->writeln('<error>PPM could find a php-cgi path. Please specify by --cgi-path=</error>');
                 exit(1);
             }
@@ -128,13 +134,12 @@ trait ConfigTrait
         return $config;
     }
 
-    protected function optionOrConfigValue(InputInterface $input, $name, $config)
+    protected function getSpecifiedOptions(InputInterface $input): array
     {
-        if ($input->hasParameterOption('--' . $name)) {
-            return $input->getOption($name);
-        }
-
-        return isset($config[$name]) ? $config[$name] : $input->getOption($name);
+        $options = $input->getOptions();
+        return array_filter($options, function (string $name) use ($input) {
+            return $input->hasParameterOption("--{$name}");
+        }, ARRAY_FILTER_USE_KEY);
     }
 
     /**
