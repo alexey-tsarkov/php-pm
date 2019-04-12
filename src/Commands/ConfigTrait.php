@@ -19,11 +19,18 @@ trait ConfigTrait
     protected $configPath = '';
     protected $configTree;
 
-    protected function configurePPMOptions(Command $command)
+    protected function configurePPMOptions(Command $command, string ...$options)
     {
         $this->configTree = (new PPMConfiguration())->getConfigTreeBuilder()->buildTree();
 
-        foreach ($this->configTree->getChildren() as $node) {
+        $configNodes = $this->configTree->getChildren();
+        $options = $options ?: array_keys($configNodes);
+
+        foreach ($options as $name) {
+            if (!isset($configNodes[$name])) {
+                continue;
+            }
+            $node = $configNodes[$name];
             $command->addOption(
                 $node->getName(),
                 null,
