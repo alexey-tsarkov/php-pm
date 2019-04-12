@@ -8,6 +8,7 @@ use Symfony\Component\Config\Exception\FileLocatorFileNotFoundException;
 use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -19,7 +20,7 @@ trait ConfigTrait
     protected $configPath = '';
     protected $configTree;
 
-    protected function configurePPMOptions(Command $command, string ...$options)
+    public function addPPMOptions(string ...$options): self
     {
         $this->configTree = (new PPMConfiguration())->getConfigTreeBuilder()->buildTree();
 
@@ -31,7 +32,7 @@ trait ConfigTrait
                 continue;
             }
             $node = $configNodes[$name];
-            $command->addOption(
+            $this->addOption(
                 $node->getName(),
                 null,
                 InputOption::VALUE_REQUIRED,
@@ -40,7 +41,17 @@ trait ConfigTrait
             );
         }
 
-        $command->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'Path to config file', '');
+        return $this;
+    }
+
+    public function addConfigOption(string $filename = ''): self
+    {
+        return $this->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'Path to config file', $filename);
+    }
+
+    public function addWorkingDirectoryArgument(): self
+    {
+        return $this->addArgument('working-directory', InputArgument::OPTIONAL, 'Working directory', '');
     }
 
     protected function renderConfig(OutputInterface $output, array $config)
@@ -55,8 +66,8 @@ trait ConfigTrait
 
             $row = [
                 $name,
-                $value === null ? '' : var_export($value, true),
-                $default === null ? '' : var_export($default, true),
+                $this->escapeConfigValue($value),
+                $this->escapeConfigValue($default),
             ];
 
             if ($value !== $default) {
@@ -159,6 +170,11 @@ trait ConfigTrait
         return array_filter($options, function (string $name) use ($input) {
             return $input->hasParameterOption("--{$name}");
         }, ARRAY_FILTER_USE_KEY);
+    }
+
+    protected function escapeConfigValue($value): string
+    {
+        return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 
     /**

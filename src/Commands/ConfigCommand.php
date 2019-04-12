@@ -20,10 +20,10 @@ class ConfigCommand extends Command
 
         $this
             ->setName('config')
+            ->setDescription("Configures config file")
+            ->addConfigOption($this->configFile)
             ->addOption('show-option', null, InputOption::VALUE_REQUIRED, 'Instead of writing the config, only show the given option.', '')
-            ->setDescription("Configures config file, default - \"{$this->configFile}\"");
-
-        $this->configurePPMOptions($this);
+            ->addPPMOptions();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -33,7 +33,9 @@ class ConfigCommand extends Command
 
         if ($name = $input->getOption('show-option')) {
             if (isset($config[$name])) {
-                $output->writeln(var_export($config[$name], true));
+                $output->writeln($this->escapeConfigValue($config[$name]));
+            } else {
+                $output->writeln($this->escapeConfigValue(null));
             }
             return;
         }

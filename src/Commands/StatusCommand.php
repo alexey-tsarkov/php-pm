@@ -22,10 +22,9 @@ class StatusCommand extends Command
         $this
             ->setName('status')
             ->setDescription('Status of all processes')
-            ->addArgument('working-directory', null, 'Working directory', './')
-        ;
-
-        $this->configurePPMOptions($this, 'socket-path');
+            ->addWorkingDirectoryArgument()
+            ->addConfigOption()
+            ->addPPMOptions('socket-path');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)

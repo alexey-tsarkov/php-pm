@@ -5,7 +5,6 @@ namespace PHPPM\Commands;
 use PHPPM\ProcessManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class StartCommand extends Command
@@ -22,10 +21,9 @@ class StartCommand extends Command
         $this
             ->setName('start')
             ->setDescription('Starts the server')
-            ->addArgument('working-directory', InputArgument::OPTIONAL, 'Working directory', './')
-        ;
-
-        $this->configurePPMOptions($this);
+            ->addWorkingDirectoryArgument()
+            ->addConfigOption()
+            ->addPPMOptions();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)

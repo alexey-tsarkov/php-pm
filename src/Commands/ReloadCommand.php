@@ -6,7 +6,6 @@ use PHPPM\ProcessClient;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class ReloadCommand extends Command
@@ -23,10 +22,9 @@ class ReloadCommand extends Command
         $this
             ->setName('reload')
             ->setDescription('Reloads the server')
-            ->addArgument('working-directory', InputArgument::OPTIONAL, 'Working directory', './')
-        ;
-
-        $this->configurePPMOptions($this, 'socket-path');
+            ->addWorkingDirectoryArgument()
+            ->addConfigOption()
+            ->addPPMOptions('socket-path');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
