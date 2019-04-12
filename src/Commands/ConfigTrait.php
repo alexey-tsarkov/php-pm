@@ -122,7 +122,7 @@ trait ConfigTrait
         return $this->configPath;
     }
 
-    protected function loadConfig(InputInterface $input, OutputInterface $output)
+    protected function loadConfig(InputInterface $input, OutputInterface $output): array
     {
         $config = [];
 
@@ -162,9 +162,9 @@ trait ConfigTrait
      * @param InputInterface $input
      * @param OutputInterface $output
      * @param bool $render
-     * @return array|mixed
+     * @return array
      */
-    protected function initializeConfig(InputInterface $input, OutputInterface $output, bool $render = true)
+    protected function initializeConfig(InputInterface $input, OutputInterface $output, bool $render = true): array
     {
         if ($workingDir = $input->getArgument('working-directory')) {
             chdir($workingDir);
