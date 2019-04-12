@@ -3,6 +3,7 @@
 namespace PHPPM\Commands;
 
 use PHPPM\PPMConfiguration;
+use PHPPM\PhpCgiExecutableFinder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Exception\FileLocatorFileNotFoundException;
 use Symfony\Component\Config\Definition\Processor;
@@ -12,7 +13,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Process\PhpExecutableFinder;
+use LogicException;
 
 trait ConfigTrait
 {
@@ -137,28 +138,8 @@ trait ConfigTrait
             [$config, $options]
         );
 
-        if ('' === $config['cgi-path']) {
-            //not set in config nor in command options -> autodetect path
-            $executableFinder = new PhpExecutableFinder();
-            $binary = $executableFinder->find();
-
-            $cgiPaths = [
-                $binary . '-cgi', //php7.0 -> php7.0-cgi
-                str_replace('php', 'php-cgi', $binary), //php7.0 => php-cgi7.0
-            ];
-
-            foreach ($cgiPaths as $cgiPath) {
-                $path = trim(`which $cgiPath`);
-                if ($path) {
-                    $config['cgi-path'] = $path;
-                    break;
-                }
-            }
-
-            if ('' === $config['cgi-path']) {
-                $output->writeln('<error>PPM could find a php-cgi path. Please specify by --cgi-path=</error>');
-                exit(1);
-            }
+        if (!$config['cgi-path'] || !@is_executable($config['cgi-path'])) {
+            throw new LogicException('PPM could not find a php-cgi path. Please specify by --cgi-path');
         }
 
         return $config;
