@@ -23,7 +23,7 @@ trait ConfigTrait
 
     public function addPPMOptions(string ...$options): self
     {
-        $this->configTree = (new PPMConfiguration())->getConfigTreeBuilder()->buildTree();
+        $this->configTree = (new PPMConfiguration())->getConfigTree();
 
         $configNodes = $this->configTree->getChildren();
         $options = $options ?: array_keys($configNodes);

@@ -181,6 +181,11 @@ class PPMConfiguration implements ConfigurationInterface
         return $treeBuilder;
     }
 
+    public function getConfigTree()
+    {
+        return $this->getConfigTreeBuilder()->buildTree();
+    }
+
     public function getDefaults(): array
     {
         return [
