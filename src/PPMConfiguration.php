@@ -2,6 +2,7 @@
 
 namespace PHPPM;
 
+use PHPPM\PhpCgiExecutableFinder;
 use PHPPM\Utils;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -146,7 +147,11 @@ class PPMConfiguration implements ConfigurationInterface
                 ->end()
                 ->scalarNode('cgi-path')
                     ->info('Full path to the php-cgi executable')
-                    ->defaultValue('')
+                    ->defaultValue($defaults['cgi-path'])
+                    ->validate()
+                        ->ifEmpty()
+                        ->then($this->setValue($defaults['cgi-path']))
+                    ->end()
                 ->end()
                 ->scalarNode('socket-path')
                     ->info('Path to a folder where socket files will be placed. Relative to working-directory or cwd()')
@@ -193,7 +198,7 @@ class PPMConfiguration implements ConfigurationInterface
             'ttl' => 300,
             'populate-server-var' => true,
             'bootstrap' => 'PHPPM\Bootstraps\Symfony',
-            'cgi-path' => '',
+            'cgi-path' => (new PhpCgiExecutableFinder())->find(),
             'socket-path' => '.ppm/run/',
             'pidfile' => '.ppm/ppm.pid',
             'reload-timeout' => 30,
