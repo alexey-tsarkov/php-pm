@@ -22,7 +22,12 @@ class ConfigCommand extends Command
             ->setName('config')
             ->setDescription("Configures config file")
             ->addConfigOption($this->configFile)
-            ->addOption('show-option', null, InputOption::VALUE_REQUIRED, 'Instead of writing the config, only show the given option.', '')
+            ->addOption(
+                'show-option',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Instead of writing the config, only show the given option'
+            )
             ->addPPMOptions();
     }
 
@@ -31,13 +36,8 @@ class ConfigCommand extends Command
         $this->locateConfigPath($input, true);
         $config = $this->loadConfig($input, $output);
 
-        if ($name = $input->getOption('show-option')) {
-            if (isset($config[$name])) {
-                $output->writeln($this->escapeConfigValue($config[$name]));
-            } else {
-                $output->writeln($this->escapeConfigValue(null));
-            }
-            return;
+        if ($showOptions = $input->getOption('show-option')) {
+            return $this->renderOptions($output, $config, $showOptions);
         }
 
         $this->renderConfig($output, $config);
@@ -52,6 +52,14 @@ class ConfigCommand extends Command
             file_put_contents($configPath, $newContent);
             $configPath = realpath($configPath);
             $output->writeln("<info>\"${configPath}\" file written.</info>");
+        }
+    }
+
+    protected function renderOptions(OutputInterface $output, array $config, array $options)
+    {
+        foreach ($options as $name) {
+            $value = isset($config[$name]) ? $config[$name] : null;
+            $output->writeln($this->escapeConfigValue($value));
         }
     }
 }
