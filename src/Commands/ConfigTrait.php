@@ -3,6 +3,8 @@
 namespace PHPPM\Commands;
 
 use PHPPM\PPMConfiguration;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Exception\FileLocatorFileNotFoundException;
 use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -13,7 +15,8 @@ use Symfony\Component\Process\PhpExecutableFinder;
 
 trait ConfigTrait
 {
-    protected $file = './ppm.json';
+    protected $configFile = 'ppm.json';
+    protected $configPath = '';
     protected $configTree;
 
     protected function configurePPMOptions(Command $command)
@@ -65,38 +68,47 @@ trait ConfigTrait
      * @param InputInterface $input
      * @param bool $create
      * @return string
-     * @throws \Exception
+     * @throws FileLocatorFileNotFoundException
      */
-    protected function getConfigPath(InputInterface $input, $create = false)
+    protected function locateConfigPath(InputInterface $input, bool $create = false): string
     {
-        $configOption = $input->getOption('config');
-        if ($configOption && !file_exists($configOption)) {
-            if ($create) {
-                file_put_contents($configOption, json_encode([]));
-            } else {
-                throw new \Exception(sprintf('Config file not found: "%s"', $configOption));
-            }
+        if ($this->configPath) {
+            return $this->configPath;
         }
-        $possiblePaths = [
-            $configOption,
-            $this->file,
-            sprintf('%s/%s', dirname($GLOBALS['argv'][0]), $this->file)
-        ];
 
-        foreach ($possiblePaths as $path) {
-            if (file_exists($path)) {
-                return realpath($path);
+        if ($configOption = $input->getOption('config')) {
+            if (file_exists($configOption)) {
+                return $this->configPath = realpath($configOption);
             }
+   
+            if ($create) {
+                file_put_contents($configOption, json_encode(new \stdClass));
+                return $this->configPath = realpath($configOption);
+            }
+
+            throw new FileLocatorFileNotFoundException("The file \"{$configOption}\" does not exist.");
         }
-        return '';
+
+        $locator = new FileLocator([
+            getcwd(),
+            realpath(dirname($GLOBALS['argv'][0])),
+        ]);
+
+        try {
+            $this->configPath = $locator->locate($this->configFile, null, true);
+        } catch (FileLocatorFileNotFoundException $ex) {
+            $this->configPath = '';
+        }
+
+        return $this->configPath;
     }
 
     protected function loadConfig(InputInterface $input, OutputInterface $output)
     {
         $config = [];
 
-        if ($path = $this->getConfigPath($input)) {
-            $content = file_get_contents($path);
+        if ($this->locateConfigPath($input)) {
+            $content = file_get_contents($this->configPath);
             $config = json_decode($content, true);
         }
 
@@ -148,22 +160,22 @@ trait ConfigTrait
      * @param bool $render
      * @return array|mixed
      */
-    protected function initializeConfig(InputInterface $input, OutputInterface $output, $render = true)
+    protected function initializeConfig(InputInterface $input, OutputInterface $output, bool $render = true)
     {
         if ($workingDir = $input->getArgument('working-directory')) {
             chdir($workingDir);
         }
         $config = $this->loadConfig($input, $output);
 
-        if ($path = $this->getConfigPath($input)) {
+        if ($this->configPath) {
             $modified = '';
-            $fileConfig = json_decode(file_get_contents($path), true);
+            $fileConfig = json_decode(file_get_contents($this->configPath), true);
             if (json_encode($fileConfig) !== json_encode($config)) {
                 $modified = ', modified by command arguments';
             }
-            $output->writeln(sprintf('<info>Read configuration %s%s.</info>', $path, $modified));
+            $output->writeln(sprintf('<info>Read configuration "%s"%s.</info>', $this->configPath, $modified));
         }
-        $output->writeln(sprintf('<info>%s</info>', getcwd()));
+        $output->writeln(sprintf('<info>Working directory "%s".</info>', getcwd()));
 
         if ($render) {
             $this->renderConfig($output, $config);

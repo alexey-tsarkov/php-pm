@@ -21,35 +21,35 @@ class ConfigCommand extends Command
         $this
             ->setName('config')
             ->addOption('show-option', null, InputOption::VALUE_REQUIRED, 'Instead of writing the config, only show the given option.', '')
-            ->setDescription('Configure config file, default - ppm.json');
+            ->setDescription("Configures config file, default - \"{$this->configFile}\"");
 
         $this->configurePPMOptions($this);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $configPath = $this->getConfigPath($input, true);
-        if (!$configPath) {
-            $configPath = $this->file;
-        }
+        $this->locateConfigPath($input, true);
         $config = $this->loadConfig($input, $output);
 
-        if ($input->getOption('show-option')) {
-            echo $config[$input->getOption('show-option')];
-            exit(0);
+        if ($name = $input->getOption('show-option')) {
+            if (isset($config[$name])) {
+                $output->writeln(var_export($config[$name], true));
+            }
+            return;
         }
 
         $this->renderConfig($output, $config);
 
-        $newContent = json_encode($config, JSON_PRETTY_PRINT);
+        $configPath = $this->configPath ?: $this->configFile;
+        $newContent = json_encode($config, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+
         if (file_exists($configPath) && $newContent === file_get_contents($configPath)) {
-            $output->writeln(sprintf('No changes to %s file.', realpath($configPath)));
-            return null;
+            $configPath = realpath($configPath);
+            $output->writeln("No changes to \"{$configPath}\" file.");
+        } else {
+            file_put_contents($configPath, $newContent);
+            $configPath = realpath($configPath);
+            $output->writeln("<info>\"${configPath}\" file written.</info>");
         }
-
-        file_put_contents($configPath, $newContent);
-        $output->writeln(sprintf('<info>%s file written.</info>', realpath($configPath)));
-
-        return null;
     }
 }
