@@ -58,7 +58,7 @@ trait ConfigTrait
     protected function renderConfig(OutputInterface $output, array $config)
     {
         $table = new Table($output);
-        $table->setHeaders(['Option', 'Value', 'Default']);
+        $table->setHeaders(['Option', 'Config Value', 'Default Value']);
 
         foreach ($this->configTree->getChildren() as $node) {
             $name = $node->getName();
