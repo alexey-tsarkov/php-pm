@@ -36,9 +36,9 @@ class StartCommand extends Command
 
         $handler->setBridge($config['bridge']);
         $handler->setAppEnv($config['app-env']);
-        $handler->setDebug((boolean)$config['debug']);
-        $handler->setReloadTimeout((int)$config['reload-timeout']);
-        $handler->setLogging((boolean)$config['logging']);
+        $handler->setDebug($config['debug']);
+        $handler->setReloadTimeout($config['reload-timeout']);
+        $handler->setLogging($config['logging']);
         $handler->setAppBootstrap($config['bootstrap']);
         $handler->setMaxRequests($config['max-requests']);
         $handler->setMaxExecutionTime($config['max-execution-time']);
@@ -50,7 +50,5 @@ class StartCommand extends Command
         $handler->setPopulateServer($config['populate-server-var']);
         $handler->setStaticDirectory($config['static-directory']);
         $handler->run();
-
-        return null;
     }
 }
