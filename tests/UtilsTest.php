@@ -43,4 +43,16 @@ class UtilsTest extends PhpPmTestCase
         $p->setAccessible(true);
         $this->assertEquals(['SOME VALUE'], $p->getValue($object));
     }
+
+    public function testGetMaxMemory()
+    {
+        $mem = Utils::getMaxMemory();
+        $this->assertGreaterThan(0, $mem);
+    }
+
+    public function testGetNumberOfProcessors()
+    {
+        $nproc = Utils::getNumberOfProcessors();
+        $this->assertGreaterThan(0, $nproc);
+    }
 }
