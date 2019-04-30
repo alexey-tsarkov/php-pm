@@ -5,3 +5,6 @@ parameters:
         - '#Call to function method_exists.. with ...Symfony..Component#'
         - '#Call to an undefined method React\\Promise\\PromiseInterface::done\(\).#'
         - '#Method PHPPM\\ProcessSlave::onRequest\(\) should return#'
+        -
+            message: '#Call to an undefined method Symfony\\Component\\Config\\Definition\\Builder\\NodeDefinition::#'
+            path: %currentWorkingDirectory%/src/PPMConfiguration.php
